@@ -1,37 +1,38 @@
-// Users Model
-import mongoose from 'mongoose';
+// User Model
+import mongoose from 'mongoose'
+import mongoosePaginate from 'mongoose-paginate-v2'
 
-// Declare the Schema of the Mongo model
-var userSchema = new mongoose.Schema({
-    first_name: String,
-
-    other_name: String,
-
-    email: String,
-
-    mobile: String,
-
-    password: String,
-
-    admin: {
-        type: Boolean,
-        default: false
+// Create a Mongoose schema for the users
+const userSchema = new mongoose.Schema({
+    username: {
+        type: String,
+    },
+    email: {
+        type: String,
+        unique: true,
+    },
+    password: {
+        type: String,
+    },
+    role: {
+        type: String,
+        enum: ['admin', 'agent', 'buyer', 'owner'],
+        default: 'buyer'
     },
 
-    agent: {
-        type: Boolean,
-        default: false
-    },
+    passwordResetToken : String,
 
-    passwordResetToken: String,
+    passwordResetTokenExpiresAt : Date,
 
-    passwordResetTokenExpiresAt: Date,
+    passwordChangedAt : Date
 
-    passwordChangedAt: Date
+}, {timestamps : true});
 
-}, { timestamps: true });
+// plugin paginate
+userSchema.plugin(mongoosePaginate)
 
-//Export the model
+// Create a model based on the schema
 const User_Model = mongoose.model('User', userSchema);
 
+// Export the model to be used in other parts of the application
 export default User_Model;
