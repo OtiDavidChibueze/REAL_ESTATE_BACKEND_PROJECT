@@ -5,6 +5,7 @@ import Response_Helper from '../util/responseHelper.js';
 import Token from '../util/token.js'
 import InvalidTokenModel from '../model/invalidTokens.js';
 import logger from '../config/logger.js'
+import cloudinary from '../util/cloudinary.js';
 
 
 
@@ -82,7 +83,7 @@ class User_Service {
             return {
                 statusCode: 200,
                 message: 'logged in',
-                data: { user: user.email, accessToken: generateToken }
+                data: { userId: user.id, role: user.role, accessToken: generateToken }
             }
 
 
@@ -91,53 +92,77 @@ class User_Service {
         }
     }
 
-    static async updateYourProfile(data, req) {
+    static async updateYourProfile(data, currentUser, file) {
 
         try {
             // getting the details from the data
-            const { username, email } = data;
+            const { username, email, profile_picture } = data;
 
             // getting the logged in user _id
-            const { _id } = req.user;
+            const { _id } = currentUser;
 
-            // looking for the current user and update his profile
-            const currentUser = await User_Model.findByIdAndUpdate(_id, data, { new: true });
+            const user = await User_Model.findById(_id);
 
-            if (currentUser.id !== _id) return {
-                statusCode: 401,
-                message: 'Unauthorized to update this profile'
-            }
+            if (user.id === currentUser._id) {
 
-            // sending back the updated user to the client side
-            return {
-                statusCode: 200,
-                message: 'successfully Updated your Profile ',
-                data: { updated: currentUser },
+                await cloudinary.uploader.destroy(user.profile_picture.cloudinary_id)
+
+                const upload = await cloudinary.uploader.upload(file.path);
+
+                const updateUser = {
+                    username: user.username || data,
+                    email: user.email || data,
+                    profile_picture: { url: upload.secure_url, cloudinary_id: upload.public_id } || { url: user.url, cloudinary_id: user.cloudinary_id }
+                }
+
+                // looking for the current user and update his profile
+                await User_Model.findByIdAndUpdate(_id, updateUser, { new: true });
+
+                // sending back the updated user to the client side
+                return {
+                    statusCode: 200,
+                    message: 'successfully Updated your Profile ',
+                    data: { updated: user },
+                }
+
+            } else {
+                return {
+                    statusCode: 403,
+                    message: 'Unauthorized to perform this action'
+                }
             }
         } catch (err) {
             logger.error(`User_Service_updateYourProfile -> Error : ${err.message}`);
         }
     }
 
-    static async deleteYourAccount(data) {
+    static async deleteYourAccount(currentUser) {
 
         try {
             // getting the logged in user _id
-            const { _id } = data;
+            const { _id } = currentUser;
 
             // looking for the current user and update his profile
-            const currentUser = await User_Model.findByIdAndDelete(_id);
+            const user = await User_Model.findById(_id);
 
-            if (currentUser.id !== _id) return {
-                statusCode: 401,
-                message: 'Unauthorized to delete this account'
+            if (user.id === currentUser._id) {
+
+                await cloudinary.uploader.destroy(user.profile_picture.cloudinary_id);
+                await user.remove();
+
+                // sending back the updated user to the client side
+                return {
+                    statusCode: 200,
+                    message: 'successfully deleted your account ',
+                }
+
+            } else {
+                return {
+                    statusCode: 401,
+                    message: 'Unauthorized to delete this account'
+                }
             }
 
-            // sending back the updated user to the client side
-            return {
-                statusCode: 200,
-                message: 'successfully deleted your account ',
-            }
         } catch (err) {
             logger.error(`User_Service_deleteYourAccount -> Error : ${err.message}`);
         }
@@ -194,11 +219,48 @@ class User_Service {
                 data: { user: result, hasNextPage, hasPrevPage }
             }
         } catch (err) {
-            logger.error(`User_Service_getAllUsers -> Error : ${err.message}`);
+            logger.error(`User_Service_search_for_users_with_username_or_role -> Error : ${err.message}`);
         }
     }
 
 
+    static async uploadYourProfilePicture(user, currentUser, file) {
+        try {
+
+            const { id } = user;
+
+            const { _id } = currentUser;
+
+            Helper_Function.mongooseIdValidation(id);
+            Helper_Function.mongooseIdValidation(_id);
+
+            const fetchUser = await User_Model.findById(id);
+            if (!fetchUser) return {
+                statusCode: 404,
+                message: 'resource not found'
+            };
+
+            if (fetchUser.id === currentUser._id) {
+                const upload = await cloudinary.uploader.upload(file.path);
+
+                await fetchUser.updateOne({ $push: { profile_picture: { url: upload.secure_url, cloudinary_id: upload.public_id } } });
+                await fetchUser.save();
+
+                return {
+                    statusCode: 200,
+                    message: 'profile picture uploaded',
+                    data: { profile_picture: fetchUser.profile_picture }
+                }
+            } else {
+                return {
+                    statusCode: 403,
+                    message: 'sorry you are unauthorized to perform this action.'
+                }
+            }
+        } catch (error) {
+            logger.error(`User_Service_uploadYourProfilePicture -> Error : ${error.message}`);
+        }
+    }
 
 
 }

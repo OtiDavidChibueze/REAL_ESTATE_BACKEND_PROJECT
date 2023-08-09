@@ -17,7 +17,7 @@ const PropertySchema = new mongoose.Schema({
     pricePerYear: {
         selectCurrency: {
             type: String,
-            enum: ['$', '€'], //TODO : add more currency symbols
+            enum: ['$', '€', '#'], //TODO : add more currency symbols
             default: '#'
         },
         amount: {
@@ -46,20 +46,7 @@ const PropertySchema = new mongoose.Schema({
     location: {
         type: String
     },
-    images: [{
-        url1: {
-            type: String,
-            trim: true
-        },
-        url2: {
-            type: String,
-            trim: true
-        },
-        url3: {
-            type: String,
-            trim: true
-        },
-    }],
+    images: [],
     amenitiesList: [{
         type: String,
     }],

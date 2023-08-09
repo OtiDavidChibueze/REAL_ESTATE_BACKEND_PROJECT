@@ -4,6 +4,14 @@ import mongoosePaginate from 'mongoose-paginate-v2'
 
 // Create a Mongoose schema for the users
 const userSchema = new mongoose.Schema({
+    profile_picture: [{
+        url: {
+            type: String,
+        },
+        cloudinary_id: {
+            type: String
+        }
+    }],
     username: {
         type: String,
     },
@@ -20,13 +28,13 @@ const userSchema = new mongoose.Schema({
         default: 'buyer'
     },
 
-    passwordResetToken : String,
+    passwordResetToken: String,
 
-    passwordResetTokenExpiresAt : Date,
+    passwordResetTokenExpiresAt: Date,
 
-    passwordChangedAt : Date
+    passwordChangedAt: Date
 
-}, {timestamps : true});
+}, { timestamps: true });
 
 // plugin paginate
 userSchema.plugin(mongoosePaginate)

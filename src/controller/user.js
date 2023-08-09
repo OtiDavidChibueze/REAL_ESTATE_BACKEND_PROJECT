@@ -26,9 +26,7 @@ class User_Controller {
     static async signIn(req, res) {
 
         try {
-            const data = req.body;
-
-            const result = await User_Service.signIn(data);
+            const result = await User_Service.signIn(req.body, req.user);
 
             if (result.statusCode == 409) return Response_Helper.errorResponse(res, result.statusCode, result.message);
 
@@ -44,9 +42,7 @@ class User_Controller {
     static async updateYourProfile(req, res) {
 
         try {
-            const data = req.body;
-
-            const result = await User_Service.updateYourProfile(data, req);
+            const result = await User_Service.updateYourProfile(req.body, req.user, req.file);
 
             if (result.statusCode == 409) return Response_Helper.errorResponse(res, result.statusCode, result.message);
 
@@ -91,6 +87,44 @@ class User_Controller {
             logger.error(`User_Controller_deleteYourAccount -> Error : ${error.message}`);
             return Response_Helper.errorResponse(res, 500, 'Oops something went wrong!');
         }
+    }
+
+    static async uploadYourProfilePicture(req, res) {
+
+        try {
+            const result = await User_Service.uploadYourProfilePicture(req.params, req.user, req.file)
+
+            if (result.statusCode == 409) return Response_Helper.errorResponse(res, result.statusCode, result.message);
+
+            logger.info(`User_Controller_uploadYourProfilePicture -> Info : profile picture uploaded : ${JSON.stringify(result.data)}`)
+
+            return Response_Helper.successResponse(res, result.statusCode, result.message, result.data);
+
+
+        } catch (err) {
+            logger.error(`User_Controller_uploadYourProfilePicture -> Error : ${err.message}`);
+            return Response_Helper.errorResponse(res, 500, 'Oops something went wrong!');
+        }
+
+    }
+
+    static async updateYourProfilePicture(req, res) {
+
+        try {
+            const result = await User_Service.updateYourProfilePicture(req.user, req.file)
+
+            if (result.statusCode == 409) return Response_Helper.errorResponse(res, result.statusCode, result.message);
+
+            logger.info(`User_Controller_updateYourProfilePicture -> Info : profile pic updated  : ${JSON.stringify(result.data)}`)
+
+            return Response_Helper.successResponse(res, result.statusCode, result.message, result.data);
+
+
+        } catch (err) {
+            logger.error(`User_Controller_updateYourProfilePicture -> Error : ${err.message}`);
+            return Response_Helper.errorResponse(res, 500, 'Oops something went wrong!');
+        }
+
     }
 }
 

@@ -1,6 +1,7 @@
 // Property Service
 import logger from "../config/logger.js";
 import PropertyModel from "../model/property.js";
+import cloudinary from "../util/cloudinary.js";
 import Helper_Function from "../util/helperFunction.js";
 
 class Property_Service {
@@ -10,7 +11,7 @@ class Property_Service {
      * @param {object} data - the object data
      * @returns - returns a json response
      */
-    static async createPropertyForm(data, req) {
+    static async createPropertyForm(data, currentUser) {
         try {
             // getting the details from the data
             const {
@@ -30,9 +31,13 @@ class Property_Service {
             } = data;
 
             // getting the  logged In user _Id
-            const { _id } = req.user
 
-            if (req.user.role === 'agent' || req.user.role === 'admin' || req.user.role === 'owner') {
+            const { _id } = currentUser
+
+            Helper_Function.mongooseIdValidation(_id);
+
+            if (currentUser.role === 'agent' || currentUser.role === 'admin' || currentUser.role === 'owner') {
+
                 const newProperty = await new PropertyModel({
                     user: _id,
                     title,
@@ -61,11 +66,11 @@ class Property_Service {
                 }
             }
         } catch (error) {
-            logger.error(`Property_Service_CreateProperty -> Error : ${error.message}`)
+            logger.error(`Property_Service_CreateProperty -> Error : ${error}`)
         }
     }
 
-    static async updatePropertyById(data, req) {
+    static async updatePropertyById(data, propertyId, currentUser) {
         try {
             const {
                 title,
@@ -82,13 +87,13 @@ class Property_Service {
                 availability
             } = data;
 
-            const { id } = req.params;
-            const { _id } = req.user;
+            const { id } = propertyId;
+            const { _id } = currentUser;
 
             Helper_Function.mongooseIdValidation(id);
             Helper_Function.mongooseIdValidation(_id);
 
-            if (req.user.role === 'admin' || req.user.role === 'agent' || req.user.role === 'owner') {
+            if (currentUser.role === 'admin' || currentUser.role === 'agent' || currentUser.role === 'owner') {
 
                 const property = await PropertyModel.findById(id);
 
@@ -116,13 +121,13 @@ class Property_Service {
         }
     }
 
-    static async deletePropertyById(data, req) {
+    static async deletePropertyById(propertyId, currentUser) {
         try {
-            const { id } = data;
+            const { id } = propertyId;
 
             Helper_Function.mongooseIdValidation(id);
 
-            if (req.user.role === 'admin' || req.user.role === 'agent' || req.user.role === 'owner') {
+            if (currentUser.role === 'admin' || currentUser.role === 'agent' || currentUser.role === 'owner') {
 
                 const property = await PropertyModel.findById(id);
 
@@ -150,7 +155,51 @@ class Property_Service {
         }
     }
 
+    static async uploadImagesToAPropertyById(propertyId, currentUser, files) {
 
+        const { id } = propertyId;
+
+        const { _id } = currentUser;
+
+        Helper_Function.mongooseIdValidation(id);
+        Helper_Function.mongooseIdValidation(_id);
+
+        try {
+
+            const property = await PropertyModel.findById(id);
+            if (!property)
+                return {
+                    statusCode: 404,
+                    message: 'resource does not exist!'
+
+                };
+
+            const uploadedImgs = [];
+
+            for (const file of files) {
+                const uploads = await cloudinary.uploader.upload(file.path);
+                uploadedImgs.push(uploads.secure_url);
+            }
+
+            const imageObject = {};
+
+            uploadedImgs.forEach((url, index) => {
+                imageObject[`url${index + 1}`] = url;
+            });
+
+            property.images = imageObject;
+
+            await property.save();
+
+            return {
+                statusCode: 201,
+                message: 'successfully uploaded',
+                data: { successfully_uploaded: property }
+            }
+        } catch (error) {
+            console.log('error', error)
+        }
+    }
 }
 
 
