@@ -1,21 +1,20 @@
 // Token Config
-import jwt from "jsonwebtoken";
-import { SECRET } from "../config/keys/secretKeys.js";
-import logger from "../config/logger.js";
+const jwt = require('jsonwebtoken')
+const { SECRET } = require('../config/keys/secretKeys.js')
+const logger = require('../config/logger.js')
 
-export default class Token {
-
+module.exports = class Token {
     /**
      * @description - this is used to generateToken
      */
     static generateToken(user) {
         const payload = {
             userId: user.id,
-            role: user.role
+            role: user.role,
         }
 
         const options = {
-            expiresIn: '1d'
+            expiresIn: '1d',
         }
 
         try {
@@ -25,5 +24,4 @@ export default class Token {
             logger.error(error)
         }
     }
-
 }

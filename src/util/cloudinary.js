@@ -1,12 +1,16 @@
 // Cloudinary Config
-import cloudinary from 'cloudinary';
-import { Cloud_Name, Cloud_Api, Cloud_Secret } from '../config/keys/secretKeys.js';
+const cloudinary = require('cloudinary').v2
+const {
+    Cloud_Name,
+    Cloud_Api,
+    Cloud_Secret,
+} = require('../config/keys/secretKeys.js')
 
-cloudinary.v2.config({
+// Configure the cloudinary object
+cloudinary.config({
     cloud_name: Cloud_Name,
     api_key: Cloud_Api,
-    api_secret: Cloud_Secret
-});
+    api_secret: Cloud_Secret,
+})
 
-
-export default cloudinary;
+module.exports = { cloudinary }

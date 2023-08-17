@@ -1,21 +1,22 @@
 // Multer Config
-import multer from "multer";
-import path from "path";
+const multer = require('multer')
+const path = require('path')
 
-const storage = multer.diskStorage({});
+const multerStorage = multer.diskStorage({})
 
-const fileFilter = (req, file, cb) => {
-    let ext = path.extname(file.originalname);
+const myFileFilter = (req, file, cb) => {
+    let ext = path.extname(file.originalname)
     if (ext !== '.jpeg' && ext !== '.jpg' && ext !== '.png') {
-        cb(new Error('File type is not supported'), false);
-        return;
+        // Allow only JPEG and JPG formats
+        cb(new Error('Only JPEG, JPG and PNG files are allowed'), false)
+        return
     }
-    cb(null, true);
-};
+    cb(null, true)
+}
 
 const upload = multer({
-    storage: storage,
-    fileFilter: fileFilter
-});
+    storage: multerStorage,
+    fileFilter: myFileFilter,
+})
 
-export default upload;
+module.exports = { upload }

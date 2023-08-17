@@ -1,20 +1,16 @@
 // Database Config
-import logger from './logger.js';
-import mongoose from 'mongoose';
-import { database } from './keys/secretKeys.js';
+const logger = require('./logger.js')
+const mongoose = require('mongoose')
+const { localDatabase, onlineDatabase } = require('./keys/secretKeys.js')
 
-const connectToDatabase = () => {
+module.exports = () => {
     try {
-        mongoose.connect(database, { useUnifiedTopology: true, useNewUrlParser: true });
-        logger.info(`connected to database`)
-
+        mongoose.connect(onlineDatabase, {
+            useUnifiedTopology: true,
+            useNewUrlParser: true,
+        })
+        logger.info(`connected to onlineDatabase`)
     } catch (err) {
-        logger.error(`Database_Connection -> Error: ${err.message}`)
+        logger.error(`onlineDatabase_Connection -> Error: ${err.message}`)
     }
 }
-
-export default connectToDatabase;
-
-
-
-
