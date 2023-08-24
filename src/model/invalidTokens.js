@@ -6,7 +6,6 @@ const schema = mongoose.Schema(
         invalidToken: {
             type: String,
             unique: true,
-            required: true,
         },
     },
     { timestamps: true }
