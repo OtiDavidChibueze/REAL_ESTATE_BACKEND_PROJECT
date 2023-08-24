@@ -4,6 +4,16 @@ const logger = require('../config/logger')
 const Response_Helper = require('../util/responseHelper')
 
 module.exports = class Payment_Controller {
+    /**
+     * @description - Payment Controllers
+     */
+
+    /**
+     * @description - initialize Payment controller
+     * @param {object} req - the object request
+     * @param {object} res - the object response
+     * @returns - returns a success response
+     */
     static async initializePayment(req, res) {
         try {
             const result = await Payment_Service.initializePayment(
@@ -44,10 +54,17 @@ module.exports = class Payment_Controller {
         }
     }
 
-    static async verifyTransactionByRef_id(req, res) {
+    /**
+     * @description - view transaction by reference id controller
+     * @param {object} req - the object request
+     * @param {object} res - the object response
+     * @returns - returns a success response
+     */
+    static async viewTransactionByRef_id(req, res) {
         try {
-            const result = await Payment_Service.verifyTransactionByRef_id(
-                req.params
+            const result = await Payment_Service.viewTransactionByRef_id(
+                req.params,
+                req.user._id
             )
 
             if (result.statusCode == 409)
@@ -58,7 +75,7 @@ module.exports = class Payment_Controller {
                 )
 
             logger.info(
-                `Payment_Controller_verifyTransactionByRef_id -> Info : 'payment verification successful , payment confirmed',: ${JSON.stringify(
+                `Payment_Controller_viewTransactionByRef_id -> Info : 'payment verification successful , payment confirmed',: ${JSON.stringify(
                     result.data
                 )}`
             )
@@ -71,21 +88,26 @@ module.exports = class Payment_Controller {
             )
         } catch (err) {
             logger.error(
-                `Property_Service_verifyTransactionByRef_id -> Error: ${err.message}`
+                `Property_Service_viewTransactionByRef_id -> Error: ${err.message}`
             )
             return Response_Helper.errorResponse(
                 res,
                 500,
-                'An error occurred during payment verification'
+                'Oops An error occurred'
             )
         }
     }
 
+    /**
+     * @description - handle webhook notification controller
+     * @param {object} req - the object request
+     * @param {object} res - the object response
+     * @returns - returns a success response
+     */
     static async handleWebhookNotification(req, res) {
         try {
             const result = await Payment_Service.handleWebhookNotification(
-                req.body,
-                req.headers
+                req.params
             )
 
             if (result.statusCode == 409)
@@ -96,7 +118,7 @@ module.exports = class Payment_Controller {
                 )
 
             logger.info(
-                `Payment_Controller_handleWebhookNotification -> Info : 'payment verification successful , payment confirmed',: ${JSON.stringify(
+                `Payment_Controller_handleWebhookNotification -> Info : ' Webhook received and processed successfully' : ${JSON.stringify(
                     result.data
                 )}`
             )
