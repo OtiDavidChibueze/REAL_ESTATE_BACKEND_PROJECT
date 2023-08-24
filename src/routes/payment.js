@@ -8,7 +8,7 @@ const Authorization = require('../middleware/authorization.js')
 router.get(
     '/:id/verify/transaction',
     Authorization,
-    Payment_Controller.verifyTransactionByRef_id
+    Payment_Controller.viewTransactionByRef_id
 )
 
 //Post
@@ -18,7 +18,7 @@ router.post(
     Payment_Controller.initializePayment
 )
 router.post(
-    '/flutterwave/webhook',
+    '/:propertyId/handle/webhook/:paymentId',
     Authorization,
     Payment_Controller.handleWebhookNotification
 )
