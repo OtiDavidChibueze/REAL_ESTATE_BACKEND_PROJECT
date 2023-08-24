@@ -17,9 +17,11 @@ app.use(helmet())
 // Routes
 const User_Routes = require('./user.js')
 const Property_Routes = require('./property.js')
+const Payment_Routes = require('./payment.js')
 
 app.use('/api/v1/property', Property_Routes)
 app.use('/api/v1/user', User_Routes)
+app.use('/api/v1/payment', Payment_Routes)
 
 // export the application
 module.exports = app
