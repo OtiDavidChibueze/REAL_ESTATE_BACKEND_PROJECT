@@ -11,8 +11,8 @@ module.exports = class Helper_Function {
         }
     }
 
-    static comparePassword(password, userPassword) {
-        return bcrypt.compareSync(password, userPassword)
+    static comparePassword(oldPassword, userPassword) {
+        return bcrypt.compareSync(oldPassword, userPassword)
     }
 
     static hashPassword(password) {
@@ -25,7 +25,7 @@ module.exports = class Helper_Function {
             .createHash('sha256')
             .update(resetToken)
             .digest('hex')
-        user.passwordResetTokenExpiresAt = new Date.now() + 10 * 60
+        user.passwordResetTokenExpiresAt = Date.now() + 10 * 60 * 1000
         await user.save()
         return resetToken
     }
