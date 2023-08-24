@@ -18,7 +18,9 @@ module.exports = async (req, res, next) => {
 
         const token = authHeader.split(' ')[1]
 
-        const invalidToken = await InvalidTokenModel.findOne({ token: token })
+        const invalidToken = await InvalidTokenModel.findOne({
+            invalidToken: token,
+        })
 
         if (invalidToken)
             return Response_Helper.errorResponse(
@@ -35,7 +37,10 @@ module.exports = async (req, res, next) => {
                 async (err, decodedToken) => {
                     if (err) {
                         logger.info(`Authorization -> Error : ${err}`)
-                        if (err.name === TokenExpiredError) {
+                        if (
+                            err.message === 'jwt expired' ||
+                            err.name === TokenExpiredError
+                        ) {
                             return Response_Helper.errorResponse(
                                 res,
                                 403,
