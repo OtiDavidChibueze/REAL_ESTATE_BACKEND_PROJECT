@@ -1,10 +1,9 @@
 // Property Model
 const mongoose = require('mongoose')
-const ReviewModel = require('./reviews')
 
 const PropertySchema = new mongoose.Schema(
     {
-        user: {
+        admin: {
             type: mongoose.Schema.Types.ObjectId,
             ref: 'User',
         },
@@ -18,8 +17,8 @@ const PropertySchema = new mongoose.Schema(
         pricePerYear: {
             selectCurrency: {
                 type: String,
-                enum: ['$', '€', '#'], //TODO : add more currency symbols
-                default: '#',
+                enum: ['USD', 'NGN', 'CAD', 'EUR'],
+                default: 'USD',
             },
             amount: {
                 type: Number,
@@ -31,7 +30,7 @@ const PropertySchema = new mongoose.Schema(
             type: Number,
             min: 1,
         },
-        bathroomCount: {
+        bathroomsCount: {
             type: Number,
             min: 1,
         },
@@ -57,11 +56,7 @@ const PropertySchema = new mongoose.Schema(
                 },
             },
         ],
-        amenitiesList: [
-            {
-                type: String,
-            },
-        ],
+        amenitiesList: [],
 
         reviews: [
             {
@@ -69,13 +64,15 @@ const PropertySchema = new mongoose.Schema(
                 ref: 'Review',
             },
         ],
-
         availability: {
             type: Boolean,
             default: false,
         },
+        paymentMethod: {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: 'Payment',
+        },
     },
     { timestamps: true }
 )
-
 module.exports = mongoose.model('Property', PropertySchema)
