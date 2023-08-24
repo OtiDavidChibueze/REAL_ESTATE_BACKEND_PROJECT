@@ -11,6 +11,13 @@ const UserModel = require('../model/user')
 const PaymentModel = require('../model/payment')
 
 module.exports = class Payment_Service {
+    /**
+     * @description - this endpoint allows users initialize payment to a property
+     * @param {object} data - the object data
+     * @param {id} propertyId - the property id
+     * @param {_id} currentUser - the logged in user
+     * @returns - returns a json object
+     */
     static async initializePayment(data, propertyId, currentUser) {
         try {
             const { selectCurrency } = data
@@ -72,12 +79,7 @@ module.exports = class Payment_Service {
             )
 
             if (response.data.status === 'success') {
-                const savePayment = await new PaymentModel(paymentData).save()
-
-                await property.updateOne({
-                    $push: { paymentMethod: savePayment.id },
-                    $set: { availability: false },
-                })
+                await new PaymentModel(paymentData).save()
 
                 const paymentLink = response.data.data.link
 
@@ -100,9 +102,38 @@ module.exports = class Payment_Service {
         }
     }
 
-    static async handleWebhookNotification(webhookData) {
+    /**
+     * @description - this endpoint allows only admins handle webhook notification
+     * @param {id} params - the ids passed in the params
+     * @returns - returns a json object
+     */
+    static async handleWebhookNotification(params) {
         try {
+            const { propertyId, paymentId } = params
 
+            const property = await PropertyModel.findById({
+                _id: propertyId,
+            })
+
+            if (!property)
+                return {
+                    statusCode: 404,
+                    message: 'property with the provided id not found',
+                }
+
+            const payment = await PaymentModel.findOne({
+                _id: paymentId,
+            })
+
+            Helper_Function.mongooseIdValidation(propertyId)
+            Helper_Function.mongooseIdValidation(paymentId)
+
+            if (!payment)
+                return {
+                    statusCode: 404,
+                    message:
+                        'payment with the provided transaction id not found',
+                }
 
             const requestHeader = {
                 'content-type': 'application/json',
@@ -110,26 +141,25 @@ module.exports = class Payment_Service {
             }
 
             const isValidResponse = await axios.get(
-                `https://api.flutterwave.com/v3/transactions/${webhookData.data.tx_ref}/verify`,
+                `https://api.flutterwave.com/v3/transactions/${payment.tx_ref}/verify`,
                 {
                     headers: requestHeader,
                 }
             )
 
             if (isValidResponse.data.data.status === 'success') {
-                const txRef = webhookData.data.tx_ref
+                payment.status = 'success'
 
-                const payment = await PaymentModel.findOne({ tx_ref: txRef })
+                await payment.save()
 
-                if (payment) {
-                    payment.status = webhookData.data.status
+                await property.updateOne({
+                    $push: { paymentMethod: payment.tx_ref },
+                    $set: { availability: false },
+                })
 
-                    await payment.save()
-
-                    return {
-                        statusCode: 200,
-                        message: 'Webhook received and processed successfully',
-                    }
+                return {
+                    statusCode: 200,
+                    message: 'Webhook received and processed successfully',
                 }
             } else {
                 return {
@@ -140,6 +170,47 @@ module.exports = class Payment_Service {
         } catch (err) {
             logger.error(
                 `Payment_Service_handleWebhookNotification -> Error: ${err.message}`
+            )
+        }
+    }
+
+    /**
+     * @description - this endpoint allows only users view their transaction by transaction_id {tx_ref}
+     * @param {id} transaction - the transaction ref
+     * @param {_id} currentUser - the logged in user
+     * @returns - returns a json object
+     */
+    static async viewTransactionByRef_id(transaction, currentUserId) {
+        try {
+            const user = await UserModel.findById(currentUserId)
+
+            Helper_Function.mongooseIdValidation(currentUserId)
+
+            const payment = await PaymentModel.findOne({
+                tx_ref: transaction.id,
+            })
+
+            if (!payment)
+                return {
+                    statusCode: 501,
+                    message: 'payment with the transaction id not found',
+                }
+
+            if (payment.customer.userRefId.equals(user.id)) {
+                return {
+                    statusCode: 200,
+                    message: 'transaction found',
+                    data: { payment },
+                }
+            } else {
+                return {
+                    statusCode: 403,
+                    message: 'Unauthorized to perform this action',
+                }
+            }
+        } catch (error) {
+            logger.error(
+                `Payment_Service_verifyTransactionByRef_id -> Error: ${error.message}`
             )
         }
     }
